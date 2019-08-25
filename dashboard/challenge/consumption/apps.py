@@ -5,4 +5,5 @@ from django.apps import AppConfig
 
 
 class ConsumptionConfig(AppConfig):
-    name = 'consumption'
+    name = 'challenge.consumption'
+    label = 'consumption'

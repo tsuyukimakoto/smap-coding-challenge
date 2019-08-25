@@ -2,11 +2,26 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 
-class Area(models.Model):
+class MasterManager(models.Manager):
+    def master_data(self):
+        result = {}
+        for data in self.get_queryset().all():
+            result[data.label] = data
+        return result
+
+
+class MasterDataModel(models.Model):
+    objects = MasterManager()
+
+    class Meta:
+        abstract = True
+
+
+class Area(MasterDataModel):
     label = models.CharField(_("Area name"), max_length=10)
 
 
-class Tariff(models.Model):
+class Tariff(MasterDataModel):
     label = models.CharField(_("Tariff type"), max_length=10)
 
 
@@ -43,6 +58,10 @@ class Consumption(models.Model):
         super().__setattr__(name, value)
         if 'original_value' == name:
             self.value = int(value * 10)
+
+    @property
+    def value_as_base(self):
+        return self.value / 10
 
     class Meta:
         get_latest_by = 'timestamp'

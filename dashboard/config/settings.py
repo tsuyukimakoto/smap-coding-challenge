@@ -121,3 +121,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# for import data
+USER_DATA_FILE = os.path.join(BASE_DIR, '..', 'data', 'user_data.csv')
+CONSUMPTION_DATA_DIR = os.path.join(BASE_DIR, '..', 'data', 'consumption')

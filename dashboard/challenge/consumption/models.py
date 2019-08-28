@@ -13,6 +13,9 @@ class MasterManager(models.Manager):
 class MasterDataModel(models.Model):
     objects = MasterManager()
 
+    def __str__(self):
+        return self.label
+
     class Meta:
         abstract = True
 

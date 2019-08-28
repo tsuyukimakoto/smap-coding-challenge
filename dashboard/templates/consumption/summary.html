@@ -1,7 +1,162 @@
 {% extends './base.html' %}
+{% load i18n %}
 
 {% block content %}
+<div class="container">
+    <div class="jumbotron">
+        <h1>Year Month</h1>
+        <div id="chart-block"></div>
+    </div>
+    <div class="row">
+      {% for account in account_list %}
+        {% if forloop.first %}
+      <div class="col-md-6">
+        <table class="table table-condensed table-striped">
+          <thead>
+              <tr>
+                  <th>#</th>
+                  <th>area</th>
+                  <th>tariff</th>
+              </tr>
+          </thead>
+          <tbody>
+        {% endif %}
+              <tr>
+                  <th>{{ account.data_id }}</th>
+                  <td>{{ account.area }}</td>
+                  <td>{{ account.tariff }}</td>
+              </tr>
+        {% if forloop.counter|divisibleby:divide_count %}
+          {% if not forloop.last %}
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-condensed table-striped">
+          <thead>
+              <tr>
+              <tr>
+                  <th>#</th>
+                  <th>area</th>
+                  <th>tariff</th>
+              </tr>
+              </tr>
+          </thead>
+          <tbody>
+          {% endif %}
+        {% endif %}
+        {% if forloop.last %}
+          </tbody>
+            </table>
+        {% endif %}
+      {% endfor %}
+      </div>
+    </div>
+</div>
 
-<h1>{{message}}</h1>
+<script>
+const consumptionData = {
+  labels: [
+    {% for monthly in monthly_list %}
+      {% if forloop.last %}
+        '{{ monthly }}'
+      {% else %}
+        '{{ monthly }}',
+      {% endif %}
+    {% endfor %}
+  ],
+  averages: [
+    {% for average in average_list %}
+      {% if forloop.last %}
+        {{ average|floatformat }}
+      {% else %}
+        {{ average|floatformat }},
+      {% endif %}
+    {% endfor %}
+  ],
+  summaries: [
+    {% for summary in summary_list %}
+      {% if forloop.last %}
+        {{ summary|floatformat }}
+      {% else %}
+        {{ summary|floatformat }},
+      {% endif %}
+    {% endfor %}
+  ]
+};
+var hoge;
+const loadCharts = function () {
+  const chartDataSet = {
+    type: 'line',
+    data: {
+      labels: consumptionData.labels,
+      datasets: [{
+        label: '{% trans "Avearage" %}',
+        data: consumptionData.averages,
+        backgroundColor: 'rgba(60, 160, 220, 0.3)',
+        borderColor: 'rgba(60, 160, 220, 0.8)',
+        fill: false,
+        yAxisID: 'y-axis-1'
+      }, {
+        label: '{% trans "Summary" %}',
+        data: consumptionData.summaries,
+        backgroundColor: 'rgba(60, 190, 20, 0.3)',
+        borderColor: 'rgba(60, 190, 20, 0.8)',
+        fill: false,
+        yAxisID: 'y-axis-2'
+      }]
+    },
+    options: {
+          responsive: true,
+          hoverMode: 'index',
+          stacked: false,
+          scales: {
+            yAxes: [{
+              type: 'linear',
+              display: true,
+              position: 'left',
+              id: 'y-axis-1',
+            }, {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              id: 'y-axis-2',
 
+              gridLines: {
+                drawOnChartArea: false,
+              },
+            }],
+          }
+    }
+  };
+ 
+  const ctx = document.createElement('canvas');
+  document.getElementById('chart-block').appendChild(ctx);
+  const chart = new Chart(ctx, chartDataSet);
+
+  document.getElementById('chart-block').onclick = function(e) {
+     var slice = chart.getElementAtEvent(e);
+     if (!slice.length) return; // return if not clicked on slice
+     var label = slice[0]._model.label;
+     hoge = slice[0];
+     // switch (label) {
+     //    // add case for each label/slice
+     //    case 'Värde 5':
+     //       alert('clicked on slice 5');
+     //       window.open('www.example.com/foo');
+     //       break;
+     //    case 'Värde 6':
+     //       alert('clicked on slice 6');
+     //       window.open('www.example.com/bar');
+     //       break;
+     //    // add rests ...
+     // }
+  }
+
+};
+ 
+// グラフ作成
+loadCharts();
+
+</script>
 {% endblock content %}

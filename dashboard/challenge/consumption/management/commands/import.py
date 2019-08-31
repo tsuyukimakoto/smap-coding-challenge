@@ -38,7 +38,7 @@ def import_user_data(filepath, areas, tariffs):
         create_count = 0
         read_count = 0
         reader = csv.reader(f)
-        # skip 1st line
+        # skip 1st line (header)
         next(reader)
 
         for row in reader:
@@ -68,65 +68,88 @@ def import_user_data(filepath, areas, tariffs):
         create_count,
         read_count,
     )
+    return (read_count, create_count, )
 
 
-def _extract_user_id(filepath):
+def extract_user_id(filepath):
     _, filename = os.path.split(filepath)
     return os.path.splitext(filename)[0]
+
+
+def generage_consumption_from_row(account, row):
+    _s = row[CONSUMPTION_CSV_TIMESTAMP]
+    timestamp = make_aware(
+        # strptime costs 1.5 times
+        datetime(
+            year=int(_s[0:4]),
+            month=int(_s[5:7]),
+            day=int(_s[8:10]),
+            hour=int(_s[11:13]),
+            minute=int(_s[14:16]),
+            second=int(_s[17:19]),
+        )
+    )
+    return Consumption.objects.create_consumption(
+        account,
+        timestamp,
+        row[CONSUMPTION_CSV_CONSUMPTION],
+    )
+
+def is_duplicate(prev_measured_datetime, consumption):
+    if prev_measured_datetime and \
+       prev_measured_datetime.timestamp() == consumption.measured_datetime.timestamp():
+        logger.warning(
+            "User(%s)'s consumption data measured_datetime duplicate: %s.",
+            consumption.account_id,
+            prev_measured_datetime,
+        )
+        return True
+    return False
+
+
+def bulk_insert(data_list):
+    if len(data_list) == 0:
+        return
+
+    with transaction.atomic():
+        # 999 for SQLite
+        Consumption.objects.bulk_create(data_list)
+        # for c in data_list:
+        #     c.save()
+        logger.info('END importing consumption data: %s', data_list[0].account_id)
 
 
 def insert_consumption(filepath):
     logger.info('Start importing consumption data: %s', filepath)
 
     data_list = []
-    data_id = _extract_user_id(filepath)
-    try:
-        account = Account.objects.get(data_id=data_id)
-    except Account.DoesNotExist:
-        logger.error('User(%s) does not exist.', data_id)
+    data_id = extract_user_id(filepath)
+    account = Account.objects.get(data_id=data_id)
 
     with open(filepath, 'r', newline='') as f:
         reader = csv.reader(f)
+        next(reader)  # skip 1st line (header)
 
-        next(reader)  # skip 1st line
-
-        _before = None  # check for duplicate timestamp
+        _before = None  # check for duplicate measured_datetime
         for row in reader:
-            timestamp = make_aware(
-                datetime.strptime(row[CONSUMPTION_CSV_TIMESTAMP], "%Y-%m-%d %H:%M:%S"),
-            )
-            if _before and _before.timestamp() == timestamp.timestamp():
-                logger.warning(
-                    "User(%s)'s consumption data timestamp duplicate: %s.",
-                    data_id,
-                    row[CONSUMPTION_CSV_TIMESTAMP],
-                )
+            consumption = generage_consumption_from_row(account, row)
+            if is_duplicate(_before, consumption):  # depends on specification
                 continue
-            _before = timestamp
-
+            _before = consumption.measured_datetime
             data_list.append(
-                Consumption.objects.create_consumption(
-                    account,
-                    timestamp,
-                    row[CONSUMPTION_CSV_CONSUMPTION],
-                ),
+                consumption,
             )
 
-    with transaction.atomic():
-        try:
-            # 999 for SQLite
-            Consumption.objects.bulk_create(data_list)
-            # for c in data_list:
-            #     c.save()
-        except IntegrityError as e:  # rollbacked
-            logger.exception(
-                """User(%s)'s consumption data has errors: %s.""",
-                data_id,
-                e,
-            )
-        else:
-            logger.info('END importing consumption data: %s', data_id)
+    bulk_insert(data_list)
 
+
+def glob_consumption_files():
+    return glob(
+        os.path.join(
+            settings.CONSUMPTION_DATA_DIR,
+            '*.csv',
+        )
+    )
 
 
 class Command(BaseCommand):
@@ -140,12 +163,7 @@ class Command(BaseCommand):
             areas,
             tariffs,
         )
-        file_list = glob(
-            os.path.join(
-                settings.CONSUMPTION_DATA_DIR,
-                '*.csv',
-            )
-        )
+        file_list = glob_consumption_files()
 
         # bulk_insert_start = datetime.now()
         # # sqlite should not use multiprocessing
@@ -157,6 +175,25 @@ class Command(BaseCommand):
 
         bulk_insert_start = datetime.now()
         for filepath in file_list:
-            insert_consumption(filepath)
+            try:
+                insert_consumption(filepath)
+            except Account.DoesNotExist:
+                logger.error(
+                    'User(%s) does not exist. %s skiped.',
+                    extract_user_id(filepath),
+                    filepath,
+                )
+            except IntegrityError as e:  # rollbacked
+                logger.exception(
+                    """User(%s)'s consumption data has errors: %s.""",
+                    extract_user_id(filepath),
+                    e,
+                )
+            except ValueError as e:
+                logger.exception(
+                    """User(%s)'s consumption data has errors: %s.""",
+                    extract_user_id(filepath),
+                    e,
+                )
         bulk_insert_end = datetime.now()
         logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)

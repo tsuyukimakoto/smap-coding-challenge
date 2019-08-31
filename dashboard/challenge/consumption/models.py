@@ -49,34 +49,26 @@ class Account(models.Model):
 
 
 class ConsumptionManager(models.Manager):
-    def create_consumption(self, account, timestamp, value):
+    def create_consumption(self, account, measured_datetime, value):
         return self.model(
             account=account,
-            timestamp=timestamp,
-            original_value=Decimal(value),
+            measured_datetime=measured_datetime,
             value = int(Decimal(value) * 10),
             float_value=value,
-            year = timestamp.year,
-            month = timestamp.month,
-            day = timestamp.day,
-            year_month=int(timestamp.strftime('%Y%m')),
+            year = measured_datetime.year,
+            month = measured_datetime.month,
+            day = measured_datetime.day,
         )
 
 class Consumption(models.Model):
     account = models.ForeignKey(Account)
-    timestamp = models.DateTimeField()
-    year_month = models.IntegerField()
+    measured_datetime = models.DateTimeField()
     year = models.IntegerField()
     month = models.IntegerField()
     day = models.IntegerField()
     # 10 times the original value
     value = models.IntegerField()
     float_value = models.FloatField()
-    original_value = models.DecimalField(
-        _("Consumption"),
-        max_digits=6,
-        decimal_places=1,
-    )
 
     objects = ConsumptionManager()
 
@@ -85,10 +77,9 @@ class Consumption(models.Model):
         return self.value / 10
 
     class Meta:
-        get_latest_by = 'timestamp'
+        get_latest_by = 'measured_datetime'
         indexes = [
-            models.Index(fields=['timestamp'], name='idx_consumption__timestamp'),
-            models.Index(fields=['year_month'], name='idx_consumption__year_month'),
+            models.Index(fields=['measured_datetime'], name='idx_consumption__measured_dt'),
             models.Index(fields=['year', 'month', 'day'], name='idx_consumption__ymd'),
         ]
-        unique_together = (("account", "timestamp"),)
+        unique_together = (("account", "measured_datetime"),)

@@ -12,17 +12,10 @@ from challenge.consumption.models import Account, Consumption
 PLACES = Decimal('0.1')
 
 
-def datetime_format(dt):
-    if isinstance(dt, datetime):
-       return dt.strftime('%Y/%m')
-
 def year_month_format(year_month):
     ym = str(year_month)
     return '{0}/{1}'.format(ym[:4], ym[4:])
 
-def ymd_format(year, month, day):
-    ym = str(year_month)
-    return '{0}/{1:02d}'.format(year, month)
 
 def summary(request):
     # averages = Consumption.objects.annotate(

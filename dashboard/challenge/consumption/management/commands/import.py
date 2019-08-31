@@ -105,16 +105,19 @@ def insert_consumption(filepath):
             _before = timestamp
 
             data_list.append(
-                Consumption(
-                    account=account,
-                    timestamp=timestamp,
-                    original_value=Decimal(row[CONSUMPTION_CSV_CONSUMPTION]),
+                Consumption.objects.create_consumption(
+                    account,
+                    timestamp,
+                    row[CONSUMPTION_CSV_CONSUMPTION],
                 ),
             )
+
     with transaction.atomic():
         try:
             # 999 for SQLite
             Consumption.objects.bulk_create(data_list)
+            # for c in data_list:
+            #     c.save()
         except IntegrityError as e:  # rollbacked
             logger.exception(
                 """User(%s)'s consumption data has errors: %s.""",
@@ -123,6 +126,7 @@ def insert_consumption(filepath):
             )
         else:
             logger.info('END importing consumption data: %s', data_id)
+
 
 
 class Command(BaseCommand):
@@ -143,10 +147,16 @@ class Command(BaseCommand):
             )
         )
 
-        # sqlite should not use multiprocessing
+        # bulk_insert_start = datetime.now()
+        # # sqlite should not use multiprocessing
         # from multiprocessing import Pool
         # with Pool(processes=4) as pool:
         #     result = pool.map(insert_consumption, file_list)
+        # bulk_insert_end = datetime.now()
+        # logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)
 
+        bulk_insert_start = datetime.now()
         for filepath in file_list:
             insert_consumption(filepath)
+        bulk_insert_end = datetime.now()
+        logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)

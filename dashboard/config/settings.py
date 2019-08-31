@@ -172,7 +172,7 @@ LOGGING = {
         },
         'challenge': {
             'handlers': ['console',],
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'propagate': False,
         },
     }

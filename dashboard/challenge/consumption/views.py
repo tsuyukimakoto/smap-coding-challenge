@@ -16,26 +16,65 @@ def datetime_format(dt):
     if isinstance(dt, datetime):
        return dt.strftime('%Y/%m')
 
+def year_month_format(year_month):
+    ym = str(year_month)
+    return '{0}/{1}'.format(ym[:4], ym[4:])
+
+def ymd_format(year, month, day):
+    ym = str(year_month)
+    return '{0}/{1:02d}'.format(year, month)
+
 def summary(request):
-    averages = Consumption.objects.annotate(
-      used_year_month=TruncMonth('timestamp'),
-    ).values(
-      'used_year_month',
+    # averages = Consumption.objects.annotate(
+    #   used_year_month=TruncMonth('timestamp'),
+    # ).values(
+    #   'used_year_month',
+    # ).annotate(
+    #   average_value=Avg('original_value'),
+    # ).order_by('used_year_month')
+
+
+    # summaries = Consumption.objects.annotate(
+    #   used_year_month=TruncMonth('timestamp'),
+    # ).values(
+    #   'used_year_month',
+    # ).annotate(
+    #   summary_value=Sum('original_value'),
+    # ).order_by('used_year_month')
+
+    # averages = Consumption.objects.values(
+    #   'year_month',
+    # ).annotate(
+    #   average_value=Avg('float_value'),
+    # ).order_by('year_month')
+
+
+    # summaries = Consumption.objects.values(
+    #   'year_month',
+    # ).annotate(
+    #   summary_value=Sum('float_value'),
+    # ).order_by('year_month')
+
+    averages = Consumption.objects.values(
+      'year', 'month', 'day',
     ).annotate(
-      average_value=Avg('original_value'),
-    ).order_by('used_year_month')
+      average_value=Avg('value'),
+    ).order_by('year', 'month', 'day')
 
-
-    summaries = Consumption.objects.annotate(
-      used_year_month=TruncMonth('timestamp'),
-    ).values(
-      'used_year_month',
+    summaries = Consumption.objects.values(
+      'year', 'month', 'day',
     ).annotate(
-      summary_value=Sum('original_value'),
-    ).order_by('used_year_month')
+      summary_value=Sum('value'),
+    ).order_by('year', 'month', 'day')
 
 
-    monthly_list = [average['used_year_month'].strftime('%Y/%m') for average in averages]
+    # monthly_list = [year_month_format(average['year_month']) for average in averages]
+    monthly_list = [
+      year_month_format(
+        average['year'],
+        average['month'],
+        average['day']) for average in averages
+    ]
     average_list = [
       average['average_value'] for average in averages
     ]

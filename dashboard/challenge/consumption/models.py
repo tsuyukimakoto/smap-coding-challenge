@@ -54,11 +54,12 @@ class ConsumptionManager(models.Manager):
             account=account,
             measured_datetime=measured_datetime,
             value = int(Decimal(value) * 10),
-            float_value=value,
+            float_value=float(value),
             year = measured_datetime.year,
             month = measured_datetime.month,
             day = measured_datetime.day,
         )
+
 
 class Consumption(models.Model):
     account = models.ForeignKey(Account)

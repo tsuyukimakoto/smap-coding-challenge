@@ -2,8 +2,8 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_EVEN
 import json
 
-from django.db.models import Avg, Sum
-from django.db.models.functions import TruncMonth
+from django.db.models import Avg, Sum, FloatField
+from django.db.models.functions import Cast, TruncMonth
 from django.shortcuts import render
 
 from challenge.consumption.models import Account, Consumption
@@ -12,9 +12,8 @@ from challenge.consumption.models import Account, Consumption
 PLACES = Decimal('0.1')
 
 
-def year_month_format(year_month):
-    ym = str(year_month)
-    return '{0}/{1}'.format(ym[:4], ym[4:])
+def year_month_format(year, month):
+    return '{0}/{1:02}'.format(year, month)
 
 
 def summary(request):
@@ -49,24 +48,24 @@ def summary(request):
     # ).order_by('year_month')
 
     averages = Consumption.objects.values(
-      'year', 'month', 'day',
+      'year', 'month',
     ).annotate(
-      average_value=Avg('value'),
-    ).order_by('year', 'month', 'day')
+      average_value=Avg('value') / 10.0,
+      # average_value=Avg('float_value'),
+    ).order_by('year', 'month')
 
     summaries = Consumption.objects.values(
-      'year', 'month', 'day',
+      'year', 'month',
     ).annotate(
-      summary_value=Sum('value'),
-    ).order_by('year', 'month', 'day')
+      summary_value=Cast(Sum('value') / 10.0, FloatField()),
+      # summary_value=Sum('float_value'),
+    ).order_by('year', 'month')
 
 
-    # monthly_list = [year_month_format(average['year_month']) for average in averages]
     monthly_list = [
       year_month_format(
         average['year'],
-        average['month'],
-        average['day']) for average in averages
+        average['month']) for average in averages
     ]
     average_list = [
       average['average_value'] for average in averages

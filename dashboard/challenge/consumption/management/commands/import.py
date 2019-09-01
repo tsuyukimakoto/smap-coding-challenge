@@ -31,46 +31,6 @@ CONSUMPTION_CSV_CONSUMPTION = 1
 logger = logging.getLogger(__name__)
 
 
-def import_user_data(filepath, areas, tariffs):
-    logger.info('Start importing user data')
-
-    with open(filepath, 'r', newline='') as f:
-        create_count = 0
-        read_count = 0
-        reader = csv.reader(f)
-        # skip 1st line (header)
-        next(reader)
-
-        for row in reader:
-            read_count += 1
-            area = areas.get(row[USER_CSV_AREA], None)
-            tariff = tariffs.get(row[USER_CSV_TARIFF], None)
-            if area and tariff:
-                obj, created = Account.objects.get_or_create(
-                    data_id=row[USER_CSV_USER_ID],
-                    defaults={
-                        'area': area,
-                        'tariff': tariff,
-                    }
-                )
-                if created:
-                    create_count += 1
-                logger.debug("user(%s) created: %s", row[USER_CSV_USER_ID], created)
-            else:
-                logger.error(
-                    "user(%s)'s area(%s) or tariff(%s) are illegal.",
-                    row[USER_CSV_USER_ID],
-                    row[USER_CSV_AREA],
-                    row[USER_CSV_TARIFF],
-                )
-    logger.info(
-        'END importing user data: created(%d)/read(%d)',
-        create_count,
-        read_count,
-    )
-    return (read_count, create_count, )
-
-
 def extract_user_id(filepath):
     _, filename = os.path.split(filepath)
     return os.path.splitext(filename)[0]
@@ -119,6 +79,54 @@ def bulk_insert(data_list):
         logger.info('END importing consumption data: %s', data_list[0].account_id)
 
 
+def glob_consumption_files(directory_path):
+    return glob(
+        os.path.join(
+            directory_path,
+            '*.csv',
+        )
+    )
+
+def import_user_data(filepath, areas, tariffs):
+    logger.info('Start importing user data')
+
+    with open(filepath, 'r', newline='') as f:
+        create_count = 0
+        read_count = 0
+        reader = csv.reader(f)
+        # skip 1st line (header)
+        next(reader)
+
+        for row in reader:
+            read_count += 1
+            area = areas.get(row[USER_CSV_AREA], None)
+            tariff = tariffs.get(row[USER_CSV_TARIFF], None)
+            if area and tariff:
+                obj, created = Account.objects.get_or_create(
+                    data_id=row[USER_CSV_USER_ID],
+                    defaults={
+                        'area': area,
+                        'tariff': tariff,
+                    }
+                )
+                if created:
+                    create_count += 1
+                logger.debug("user(%s) created: %s", row[USER_CSV_USER_ID], created)
+            else:
+                logger.error(
+                    "user(%s)'s area(%s) or tariff(%s) are illegal.",
+                    row[USER_CSV_USER_ID],
+                    row[USER_CSV_AREA],
+                    row[USER_CSV_TARIFF],
+                )
+    logger.info(
+        'END importing user data: created(%d)/read(%d)',
+        create_count,
+        read_count,
+    )
+    return (read_count, create_count, )
+
+
 def insert_consumption(filepath):
     logger.info('Start importing consumption data: %s', filepath)
 
@@ -143,12 +151,56 @@ def insert_consumption(filepath):
     bulk_insert(data_list)
 
 
-def glob_consumption_files():
-    return glob(
-        os.path.join(
-            settings.CONSUMPTION_DATA_DIR,
-            '*.csv',
-        )
+def import_consumption_data(directory_path):
+    file_list = glob_consumption_files(
+        directory_path,
+    )
+
+
+    # bulk_insert_start = datetime.now()
+    # # sqlite should not use multiprocessing
+    # from multiprocessing import Pool
+    # with Pool(processes=4) as pool:
+    #     result = pool.map(insert_consumption, file_list)
+    # bulk_insert_end = datetime.now()
+    # logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)
+
+    # bulk_insert_start = datetime.now()
+    for filepath in file_list:
+        try:
+            insert_consumption(filepath)
+        except Account.DoesNotExist:
+            logger.error(
+                'User(%s) does not exist. %s skiped.',
+                extract_user_id(filepath),
+                filepath,
+            )
+        except IntegrityError as e:  # rollbacked
+            logger.exception(
+                """User(%s)'s consumption data has errors, caused db error: %s.""",
+                extract_user_id(filepath),
+                e,
+            )
+        except ValueError as e:
+            logger.exception(
+                """User(%s)'s consumption data has errors, maybe datetime: %s.""",
+                extract_user_id(filepath),
+                e,
+            )
+    # bulk_insert_end = datetime.now()
+    # logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)
+
+
+def import_data(user_file_path, consumption_directory_path):
+    areas = Area.objects.master_data()
+    tariffs = Tariff.objects.master_data()
+    import_user_data(
+        user_file_path,
+        areas,
+        tariffs,
+    )
+    import_consumption_data(
+        consumption_directory_path,
     )
 
 
@@ -156,44 +208,7 @@ class Command(BaseCommand):
     help = 'import data'
 
     def handle(self, *args, **options):
-        areas = Area.objects.master_data()
-        tariffs = Tariff.objects.master_data()
-        import_user_data(
+        import_data(
             settings.USER_DATA_FILE,
-            areas,
-            tariffs,
+            settings.CONSUMPTION_DATA_DIR,
         )
-        file_list = glob_consumption_files()
-
-        # bulk_insert_start = datetime.now()
-        # # sqlite should not use multiprocessing
-        # from multiprocessing import Pool
-        # with Pool(processes=4) as pool:
-        #     result = pool.map(insert_consumption, file_list)
-        # bulk_insert_end = datetime.now()
-        # logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)
-
-        bulk_insert_start = datetime.now()
-        for filepath in file_list:
-            try:
-                insert_consumption(filepath)
-            except Account.DoesNotExist:
-                logger.error(
-                    'User(%s) does not exist. %s skiped.',
-                    extract_user_id(filepath),
-                    filepath,
-                )
-            except IntegrityError as e:  # rollbacked
-                logger.exception(
-                    """User(%s)'s consumption data has errors: %s.""",
-                    extract_user_id(filepath),
-                    e,
-                )
-            except ValueError as e:
-                logger.exception(
-                    """User(%s)'s consumption data has errors: %s.""",
-                    extract_user_id(filepath),
-                    e,
-                )
-        bulk_insert_end = datetime.now()
-        logger.error('bulk insert %s', bulk_insert_end - bulk_insert_start)

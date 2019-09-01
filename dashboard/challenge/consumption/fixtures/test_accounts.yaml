@@ -1,0 +1,8 @@
+---
+
+- model: consumption.account
+  pk: 1
+  fields:
+    data_id: 9999
+    area_id: 1
+    tariff_id: 1

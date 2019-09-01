@@ -1,0 +1,11 @@
+---
+
+- model: consumption.area
+  pk: 1
+  fields:
+    label: a1
+
+- model: consumption.area
+  pk: 2
+  fields:
+    label: a2

@@ -1,0 +1,16 @@
+---
+
+- model: consumption.tariff
+  pk: 1
+  fields:
+    label: t1
+
+- model: consumption.tariff
+  pk: 2
+  fields:
+    label: t2
+
+- model: consumption.tariff
+  pk: 3
+  fields:
+    label: t3

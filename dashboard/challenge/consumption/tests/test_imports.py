@@ -2,11 +2,20 @@ from datetime import timedelta
 import importlib
 import os
 
-from django.db.models import Avg, Sum, FloatField
+from django.db.models import (
+    Avg,
+    Sum,
+    FloatField,
+)
 from django.db.models.functions import Cast
 from django.test import TestCase
 
-from challenge.consumption.models import Account, Consumption, Area, Tariff
+from challenge.consumption.models import (
+    Account,
+    Consumption,
+    Area,
+    Tariff,
+)
 
 import_command = importlib.import_module('challenge.consumption.management.commands.import')
 

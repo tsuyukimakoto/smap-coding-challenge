@@ -1,6 +1,5 @@
 import csv
 from datetime import datetime
-from decimal import Decimal
 from glob import glob
 import logging
 import os
@@ -55,6 +54,7 @@ def generage_consumption_from_row(account, row):
         row[CONSUMPTION_CSV_CONSUMPTION],
     )
 
+
 def is_duplicate(prev_measured_datetime, consumption):
     if prev_measured_datetime and \
        prev_measured_datetime.timestamp() == consumption.measured_datetime.timestamp():
@@ -86,6 +86,7 @@ def glob_consumption_files(directory_path):
             '*.csv',
         )
     )
+
 
 def import_user_data(filepath, areas, tariffs):
     logger.info('Start importing user data')
@@ -155,7 +156,6 @@ def import_consumption_data(directory_path):
     file_list = glob_consumption_files(
         directory_path,
     )
-
 
     # bulk_insert_start = datetime.now()
     # # should not use multiprocessing for sqlite

@@ -53,11 +53,11 @@ class ConsumptionManager(models.Manager):
         return self.model(
             account=account,
             measured_datetime=measured_datetime,
-            value = int(Decimal(value) * 10),
+            value=int(Decimal(value) * 10),
             float_value=float(value),
-            year = measured_datetime.year,
-            month = measured_datetime.month,
-            day = measured_datetime.day,
+            year=measured_datetime.year,
+            month=measured_datetime.month,
+            day=measured_datetime.day,
         )
 
 

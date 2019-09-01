@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 
 from django.test import TestCase  # noqa
 from django.utils.timezone import make_aware

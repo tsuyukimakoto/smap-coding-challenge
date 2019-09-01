@@ -1,9 +1,7 @@
-from datetime import datetime
-from decimal import Decimal, ROUND_HALF_EVEN
-import json
+from decimal import Decimal
 
 from django.db.models import Avg, Sum, FloatField
-from django.db.models.functions import Cast, TruncMonth
+from django.db.models.functions import Cast
 from django.shortcuts import render
 
 from challenge.consumption.models import Account, Consumption
@@ -25,7 +23,6 @@ def summary(request):
     #   average_value=Avg('original_value'),
     # ).order_by('used_year_month')
 
-
     # summaries = Consumption.objects.annotate(
     #   used_year_month=TruncMonth('timestamp'),
     # ).values(
@@ -39,7 +36,6 @@ def summary(request):
     # ).annotate(
     #   average_value=Avg('float_value'),
     # ).order_by('year_month')
-
 
     # summaries = Consumption.objects.values(
     #   'year_month',
@@ -61,7 +57,6 @@ def summary(request):
       # summary_value=Sum('float_value'),
     ).order_by('year', 'month')
 
-
     monthly_list = [
       year_month_format(
         average['year'],
@@ -74,7 +69,6 @@ def summary(request):
       summary['summary_value'] for summary in summaries
     ]
 
-
     account_list_qs = Account.objects.all().select_related('area', 'tariff')
     context = {
         'monthly_list': monthly_list,
@@ -84,7 +78,6 @@ def summary(request):
         'divide_count': account_list_qs.count() // 2,
     }
     return render(request, 'consumption/summary.html', context)
-
 
 
 def detail(request):

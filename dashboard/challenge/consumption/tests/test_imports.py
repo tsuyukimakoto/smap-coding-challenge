@@ -1,11 +1,10 @@
 from datetime import timedelta
 import importlib
 import os
-import random
 
 from django.db.models import Avg, Sum, FloatField
 from django.db.models.functions import Cast
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from challenge.consumption.models import Account, Consumption, Area, Tariff
 
@@ -188,7 +187,6 @@ class TestImport(TestCase):
         self.assertEqual(1, len(summary_list))
         self.assertEqual(0.3, summary_list.first()['summary_value'])
 
-
     def test_import_consumption_data__account_doesnot_exists(self):
         import_command.import_user_data(
             os.path.join(
@@ -297,4 +295,3 @@ class TestImport(TestCase):
         ).order_by('year', 'month')
 
         self.assertEqual(0, len(summary_list))
-

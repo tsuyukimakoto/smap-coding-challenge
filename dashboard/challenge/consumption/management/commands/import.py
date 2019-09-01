@@ -19,6 +19,8 @@ from challenge.consumption.models import (
     Consumption,
     Tariff,
 )
+
+
 USER_CSV_USER_ID = 0
 USER_CSV_AREA = 1
 USER_CSV_TARIFF = 2

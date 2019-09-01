@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db.models import (
   Avg,
   Sum,
@@ -50,7 +48,7 @@ def summary(request):
         'average_list': average_list,
         'summary_list': summary_list,
         'account_list': account_list_qs,
-        'divide_count': account_list_qs.count() // 2, # for template logic
+        'divide_count': account_list_qs.count() // 2,  # for template logic
     }
     return render(request, 'consumption/summary.html', context)
 

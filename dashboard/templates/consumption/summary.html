@@ -15,8 +15,8 @@
           <thead>
               <tr>
                   <th>#</th>
-                  <th>area</th>
-                  <th>tariff</th>
+                  <th>{% trans "Area name" %}</th>
+                  <th>{% trans "Tariff type" %}</th>
               </tr>
           </thead>
           <tbody>
@@ -37,8 +37,8 @@
               <tr>
               <tr>
                   <th>#</th>
-                  <th>area</th>
-                  <th>tariff</th>
+                  <th>{% trans "Area name" %}</th>
+                  <th>{% trans "Tariff type" %}</th>
               </tr>
               </tr>
           </thead>
@@ -133,26 +133,6 @@ const loadCharts = function () {
   const ctx = document.createElement('canvas');
   document.getElementById('chart-block').appendChild(ctx);
   const chart = new Chart(ctx, chartDataSet);
-
-  document.getElementById('chart-block').onclick = function(e) {
-     var slice = chart.getElementAtEvent(e);
-     if (!slice.length) return; // return if not clicked on slice
-     var label = slice[0]._model.label;
-     hoge = slice[0];
-     // switch (label) {
-     //    // add case for each label/slice
-     //    case 'Värde 5':
-     //       alert('clicked on slice 5');
-     //       window.open('www.example.com/foo');
-     //       break;
-     //    case 'Värde 6':
-     //       alert('clicked on slice 6');
-     //       window.open('www.example.com/bar');
-     //       break;
-     //    // add rests ...
-     // }
-  }
-
 };
  
 // グラフ作成

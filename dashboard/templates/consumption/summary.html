@@ -1,6 +1,8 @@
 {% extends './base.html' %}
 {% load i18n %}
 
+{% block title %}{% trans "Summaries by year/month" %}{% endblock title %}
+
 {% block content %}
 <div class="container">
     <div class="jumbotron">
@@ -84,7 +86,7 @@ const consumptionData = {
     {% endfor %}
   ]
 };
-var hoge;
+
 const loadCharts = function () {
   const chartDataSet = {
     type: 'line',
@@ -135,7 +137,6 @@ const loadCharts = function () {
   const chart = new Chart(ctx, chartDataSet);
 };
  
-// グラフ作成
 loadCharts();
 
 </script>

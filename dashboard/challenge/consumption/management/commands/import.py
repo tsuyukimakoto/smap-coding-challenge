@@ -158,7 +158,7 @@ def import_consumption_data(directory_path):
 
 
     # bulk_insert_start = datetime.now()
-    # # sqlite should not use multiprocessing
+    # # should not use multiprocessing for sqlite
     # from multiprocessing import Pool
     # with Pool(processes=4) as pool:
     #     result = pool.map(insert_consumption, file_list)

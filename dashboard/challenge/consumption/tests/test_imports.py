@@ -51,7 +51,6 @@ class TestImport(TestCase):
         self.assertEqual(8, consumption.month)
         self.assertEqual(31, consumption.day)
         self.assertEqual(1, consumption.value)
-        self.assertEqual(0.1, consumption.float_value)
 
     def test_is_duplicate(self):
         consumption = self._generate_consumption()
